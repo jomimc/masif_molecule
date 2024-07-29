@@ -40,6 +40,7 @@ def parse_arguments():
     parser.add_argument('--msms_density', type=float, default=3.0, help='Density of surface triangulation')
     parser.add_argument('--msms_hdensity', type=float, default=3.0, help='Density of surface triangulation')
     parser.add_argument('--msms_probe', type=float, default=1.5, help='Surface triangulation probe radius')
+    parser.add_argument('--mesh_res', type=float, default=1.0, help='Surface triangulation probe radius')
     parser.add_argument('--redo', action='store_true', help='Overwrite surface comparison results')
     parser.add_argument('--noH', action='store_true', help='Do not protonate PDB file?')
     parser.add_argument('--hbond', action='store_true', help='Calculate hydrogen-bonding potential')
@@ -49,6 +50,21 @@ def parse_arguments():
     parser.add_argument('--use_mp', action='store_true', help='Use multiprocessing')
 
     return parser.parse_args()
+
+
+def unpack_names(names):
+    chain, residx, resname, atomtype = [], [], [], []
+    for n in names:
+        c, ri, rn, a = n.split('_')
+        chain.append(c)
+        residx.append(int(ri))
+        resname.append(rn)
+        atomtype.append(a)
+    return [np.array(x) for x in [chain, residx, resname, atomtype]]
+
+
+def save_features(mesh, features):
+    pass 
 
 
 def compute_surface(args):
@@ -62,22 +78,25 @@ def compute_surface(args):
         extractPDB(main_path, path_pdb_chain, args.chain)
         main_path = path_pdb_chain
 
-    if not args.noH:
+    if args.noH:
+        # Remove hydrogens
+        path_deprotonated = tmp_dir.joinpath(f"{main_path.stem}_noH.{main_path.suffix}")
+        deprotonate(str(main_path), str(path_deprotonated))
+        main_path = path_deprotonated
+    else:
         # Add hydrogens
         path_protonated = tmp_dir.joinpath(f"{main_path.stem}_H.{main_path.suffix}")
         protonate(str(main_path), str(path_protonated))
         main_path = path_protonated
 
-    # Create xyzrn file
-
-    # Compute MSMS of surface w/hydrogens, 
+    # Compute MSMS of surface
     msms_args = ["-density", str(args.msms_density), "-hdensity", str(args.msms_hdensity),
                  "-probe", str(args.msms_probe)]
-    vertices, faces, normals, names, areas = computeMSMS(args.path, msms_args)
+    vertices, faces, normals, names, areas = computeMSMS(str(main_path), msms_args)
 
     # Compute "charged" vertices
     if args.hbond:
-        vertex_hbond = computeCharges(out_filename1, vertices, names)
+        vertex_hbond = computeCharges(main_path, vertices, names)
 
     # For each surface residue, assign the hydrophobicity of its amino acid. 
     if args.hphob:
@@ -85,30 +104,43 @@ def compute_surface(args):
 
 
     # Regularize the mesh
-    mesh = pymesh.form_mesh(vertices, faces)
-    regular_mesh = fix_mesh(mesh, masif_opts['mesh_res'])
+    mesh = fix_mesh(pymesh.form_mesh(vertices, faces), args.mesh_res)
 
     # Compute the normals
-    vertex_normal = compute_normal(regular_mesh.vertices, regular_mesh.faces)
+    vertex_normal = compute_normal(mesh.vertices, mesh.faces)
+
+    # Find nearest neighbors between old and new mesh
+    kdt = KDTree(vertices)
+    dists, result = kdt.query(testset, k=4)
+
+    # Assign names (vertex atom/residue info) to new mesh
+    names = names[result[:,0]]
 
     # Assign hbond values to new mesh
     if args.hbond:
-        vertex_hbond = assignChargesToNewMesh(regular_mesh.vertices, vertices,\
-            vertex_hbond, masif_opts)
+        vertex_hbond = assignChargesToNewMesh(mesh.vertices, vertices,\
+            vertex_hbond, masif_opts, dists=dists, result=result)
 
     # Assign hphob values to new mesh
     if args.hphob:
-        vertex_hphobicity = assignChargesToNewMesh(regular_mesh.vertices, vertices,\
-            vertex_hphobicity, masif_opts)
+        vertex_hphobicity = assignChargesToNewMesh(mesh.vertices, vertices,\
+            vertex_hphobicity, masif_opts, dists=dists, result=result)
 
     # Compute the normals
     if not args.no_apbs:
-        vertex_charges = computeAPBS(regular_mesh.vertices, out_filename1+".pdb", out_filename1)
+        vertex_charges = computeAPBS(mesh.vertices, out_filename1+".pdb", out_filename1)
+
+
+    # Add curvature to mesh
+    mesh.add_attribute("vertex_mean_curvature")
+    mesh.add_attribute("vertex_gaussian_curvature")
 
     # Convert to ply and save.
-    save_ply(out_filename1+".ply", regular_mesh.vertices,\
-                        regular_mesh.faces, normals=vertex_normal, charges=vertex_charges,\
+    save_ply(out_filename1+".ply", mesh.vertices,\
+                        mesh.faces, normals=vertex_normal, charges=vertex_charges,\
                         normalize_charges=True, hbond=vertex_hbond, hphob=vertex_hphobicity)
+
+    save_features(mesh,
 
     if not os.path.exists(masif_opts['ply_chain_dir']):
         os.makedirs(masif_opts['ply_chain_dir'])

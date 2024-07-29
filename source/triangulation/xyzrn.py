@@ -8,9 +8,9 @@ This file is part of MaSIF.
 Released under an Apache License 2.0
 """
 
-def output_pdb_as_xyzrn(pdbfilename, xyzrnfilename):
+def output_pdb_as_xyzrn(path_input, path_xyzrn):
     """
-        pdbfilename: input pdb filename
+        pdbfilename: input pdb / pqr filename
         xyzrnfilename: output in xyzrn format.
     """
     parser = PDBParser()
@@ -23,29 +23,19 @@ def output_pdb_as_xyzrn(pdbfilename, xyzrnfilename):
         if residue.get_id()[0] != " ":
             continue
         resname = residue.get_resname()
-        reskey = residue.get_id()[1]
+        residx = residue.get_id()[1]
         chain = residue.get_parent().get_id()
         atomtype = name[0]
 
-        color = "Green"
-        coords = None
-        if atomtype in radii and resname in polarHydrogens:
-            if atomtype == "O":
-                color = "Red"
-            if atomtype == "N":
-                color = "Blue"
-            if atomtype == "H":
-                if name in polarHydrogens[resname]:
-                    color = "Blue"  # Polar hydrogens
-            coords = "{:.06f} {:.06f} {:.06f}".format(
-                atom.get_coord()[0], atom.get_coord()[1], atom.get_coord()[2]
-            )
-            insertion = "x"
-            if residue.get_id()[2] != " ":
-                insertion = residue.get_id()[2]
-            full_id = "{}_{:d}_{}_{}_{}_{}".format(
-                chain, residue.get_id()[1], insertion, resname, name, color
-            )
-        if coords is not None:
-            outfile.write(coords + " " + radii[atomtype] + " 1 " + full_id + "\n")
+        if path.suffix == '.pqr':
+            R = atom.get_bfactor()
+        elif path.suffix == '.pdb':
+            if atomtype not in radii:
+                continue
+            R = radii[atomtype]
+
+        coords = "{:.06f} {:.06f} {:.06f}".format(*atom.get_coord())
+        full_id = "{chain}_{residx:d}_{resname}_{atomtype}"
+
+        outfile.write(coords + " " + R + " 1 " + full_id + "\n")
 

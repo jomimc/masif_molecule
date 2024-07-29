@@ -27,7 +27,7 @@ kd_scale["ARG"] = -4.5
 def computeHydrophobicity(names):
     hp = np.zeros(len(names))
     for ix, name in enumerate(names):
-        aa = name.split("_")[3]
+        aa = name.split("_")[2]
         hp[ix] = kd_scale[aa]
     return hp
 

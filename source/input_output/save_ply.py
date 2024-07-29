@@ -34,25 +34,26 @@ def save_ply(
         mesh.set_attribute("vertex_ny", n2)
         mesh.add_attribute("vertex_nz")
         mesh.set_attribute("vertex_nz", n3)
-    if charges is not None:
-        mesh.add_attribute("charge")
-        if normalize_charges:
-            charges = charges / 10
-        mesh.set_attribute("charge", charges)
-    if hbond is not None:
-        mesh.add_attribute("hbond")
-        mesh.set_attribute("hbond", hbond)
-    if vertex_cb is not None:
-        mesh.add_attribute("vertex_cb")
-        mesh.set_attribute("vertex_cb", vertex_cb)
-    if hphob is not None:
-        mesh.add_attribute("vertex_hphob")
-        mesh.set_attribute("vertex_hphob", hphob)
-    if iface is not None:
-        mesh.add_attribute("vertex_iface")
-        mesh.set_attribute("vertex_iface", iface)
+
+#   if charges is not None:
+#       mesh.add_attribute("charge")
+#       if normalize_charges:
+#           charges = charges / 10
+#       mesh.set_attribute("charge", charges)
+
+#   if hbond is not None:
+#       mesh.add_attribute("hbond")
+#       mesh.set_attribute("hbond", hbond)
+
+#   if vertex_cb is not None:
+#       mesh.add_attribute("vertex_cb")
+#       mesh.set_attribute("vertex_cb", vertex_cb)
+
+#   if hphob is not None:
+#       mesh.add_attribute("vertex_hphob")
+#       mesh.set_attribute("vertex_hphob", hphob)
 
     pymesh.save_mesh(
-        filename, mesh, *mesh.get_attribute_names(), use_float=True, ascii=True
+        filename, mesh, *mesh.get_attribute_names(), use_float=True, ascii=False
     )
 

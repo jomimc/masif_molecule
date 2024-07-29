@@ -22,11 +22,21 @@ def protonate(in_pdb_file, out_pdb_file):
     outfile = open(out_pdb_file, "w")
     outfile.write(stdout.decode('utf-8').rstrip())
     outfile.close()
+
     # Now add them again.
     args = ["reduce", "-HIS", out_pdb_file]
     p2 = Popen(args, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p2.communicate()
     outfile = open(out_pdb_file, "w")
     outfile.write(stdout.decode('utf-8'))
+    outfile.close()
+
+def deprotonate(in_pdb_file, out_pdb_file):
+    # Remove protons 
+    args = ["reduce", "-Trim", in_pdb_file]
+    p2 = Popen(args, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p2.communicate()
+    outfile = open(out_pdb_file, "w")
+    outfile.write(stdout.decode('utf-8').rstrip())
     outfile.close()
 

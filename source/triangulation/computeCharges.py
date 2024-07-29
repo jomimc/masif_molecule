@@ -19,14 +19,14 @@ from default_config.chemistry import (
 )
 
 # Compute vertex charges based on hydrogen bond potential.
-# pdb_filename: The filename of the protonated protein.
+# path_pdb: The filename of the protonated protein.
 # vertices: The surface vertices of the protonated protein
 # The name of each vertex in the format, example: B_125_x_ASN_ND2_Green
 # where B is chain, 125 res id, x the insertion, ASN aatype, ND2 the name of the
 # atom, and green is not used anymore.
-def computeCharges(pdb_filename, vertices, names):
+def computeCharges(path_pdb, vertices, names):
     parser = PDBParser(QUIET=True)
-    struct = parser.get_structure(pdb_filename, pdb_filename + ".pdb")
+    struct = parser.get_structure("", path_pdb)
     residues = {}
     for res in struct.get_residues():
         chain_id = res.get_parent().get_id()
@@ -44,11 +44,8 @@ def computeCharges(pdb_filename, vertices, names):
         chain_id = fields[0]
         if chain_id == "":
             chain_id = " "
-        if fields[2] == "x":
-            fields[2] = " "
-        res_id = (" ", int(fields[1]), fields[2])
-        aa = fields[3]
-        atom_name = fields[4]
+        res_id = int(fields[1])
+        atom_name = fields[3]
         # Ignore atom if it is BB and it is already satisfied.
         if atom_name == "H" and res_id in satisfied_HN:
             continue
@@ -151,7 +148,7 @@ def computeSatisfied_CO_HN(atoms):
                 if atom2.get_id() == "H":
                     res2 = atom2.get_parent()
                     # Ensure they belong to different residues.
-                    if res2.get_id() != res1.get_id():
+                    if res2.get_id()[1] != res1.get_id()[1]:
                         # Compute the angle N-H:O, ideal value is 180 (but in
                         # helices it is typically 160) 180 +-30 = pi
                         angle_N_H_O_dev = computeAngleDeviation(
@@ -173,23 +170,24 @@ def computeSatisfied_CO_HN(atoms):
                             angle_N_H_O_dev - np.pi / 6 < 0
                             and angle_H_O_C_dev - np.pi / 9 < 0.0
                         ):
-                            satisfied_CO.add(res1.get_id())
-                            satisfied_HN.add(res2.get_id())
+                            satisfied_CO.add(res1.get_id()[1])
+                            satisfied_HN.add(res2.get_id()[1])
     return satisfied_CO, satisfied_HN
 
 
 # Compute the charge of a new mesh, based on the charge of an old mesh.
 # Use the top vertex in distance, for now (later this should be smoothed over 3
 # or 4 vertices)
-def assignChargesToNewMesh(new_vertices, old_vertices, old_charges, seeder_opts):
+def assignChargesToNewMesh(new_vertices, old_vertices, old_charges, seeder_opts, dists=None, result=None):
     dataset = old_vertices
     testset = new_vertices
     new_charges = np.zeros(len(new_vertices))
     if seeder_opts["feature_interpolation"]:
         num_inter = 4  # Number of interpolation features
         # Assign k old vertices to each new vertex.
-        kdt = KDTree(dataset)
-        dists, result = kdt.query(testset, k=num_inter)
+        if isinstance(dists, type(None)) or isinstance(result, type(None)):
+            kdt = KDTree(dataset)
+            dists, result = kdt.query(testset, k=num_inter)
         # Square the distances (as in the original pyflann)
         dists = np.square(dists)
         # The size of result is the same as new_vertices
@@ -208,8 +206,9 @@ def assignChargesToNewMesh(new_vertices, old_vertices, old_charges, seeder_opts)
                 )
     else:
         # Assign k old vertices to each new vertex.
-        kdt = KDTree(dataset)
-        dists, result = kdt.query(testset)
-        new_charges = old_charges[result]
+        if isinstance(dists, type(None)) or isinstance(result, type(None)):
+            kdt = KDTree(dataset)
+            dists, result = kdt.query(testset)
+        new_charges = old_charges[result[:,0]]
     return new_charges
 
