@@ -29,9 +29,7 @@ def find_modified_amino_acids(path):
     return res_set
 
 
-def extractPDB(
-    infilename, outfilename, chain_ids=None 
-):
+def extractPDB(infilename, outfilename, chain_ids=""):
     # extract the chain_ids from infilename and save in outfilename. 
     parser = PDBParser(QUIET=True)
     struct = parser.get_structure(infilename, infilename)
