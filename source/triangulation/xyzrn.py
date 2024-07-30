@@ -28,7 +28,7 @@ def output_pdb_as_xyzrn(path_input, path_xyzrn):
         atomtype = name[0]
 
         if path_input.suffix == '.pqr':
-            R = atom.get_bfactor()
+            R = str(atom.get_bfactor())
         elif path_input.suffix == '.pdb':
             if atomtype not in radii:
                 continue

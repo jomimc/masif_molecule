@@ -21,7 +21,7 @@ elec
     temp 298.15
     calcenergy total
     calcforce no
-    write pot dx NP200MUA-traj.pqr
+    write pot dx filename
 end
 print elecEnergy 1 end 
 quit
