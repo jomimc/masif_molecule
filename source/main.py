@@ -1,12 +1,8 @@
 #!/usr/bin/python
 import argparse
 from pathlib import Path
-import os
-import shutil
-import sys
 
 import numpy as np
-import Bio
 from Bio.Data.IUPACData import protein_letters_3to1
 from Bio.PDB import * 
 
@@ -31,8 +27,6 @@ def parse_arguments():
     parser.add_argument('path', type=Path, help='Path to molecule PDB / PQR file')
     parser.add_argument('-c', '--chain', default='', help='Choose a single chain to compute')
     parser.add_argument('-o', '--output_dir', default=masif_opts['ply_dir'], help='Output directory path')
-    parser.add_argument('-m', '--method', type=str, help='Which method to run?')
-    parser.add_argument('-v', '--verbose', action="store_false", help='Turn off verbose output')
     parser.add_argument('--msms_density', type=float, default=3.0, help='Density of surface triangulation')
     parser.add_argument('--msms_hdensity', type=float, default=3.0, help='Density of surface triangulation')
     parser.add_argument('--msms_probe', type=float, default=1.5, help='Surface triangulation probe radius')
@@ -42,8 +36,6 @@ def parse_arguments():
     parser.add_argument('--hbond', action='store_true', help='Calculate hydrogen-bonding potential')
     parser.add_argument('--hphob', action='store_true', help='Calculate Kyte-Doolittle hydrophobicity')
     parser.add_argument('--no_apbs', action='store_true', help='Calculate electrostatic potential')
-    parser.add_argument('--run_all', action='store_true', help='Run on all surfaces')
-    parser.add_argument('--use_mp', action='store_true', help='Use multiprocessing')
 
     return parser.parse_args()
 
