@@ -39,6 +39,7 @@ def parse_arguments():
     parser.add_argument('--hbond', action='store_true', help='Calculate hydrogen-bonding potential')
     parser.add_argument('--hphob', action='store_true', help='Calculate Kyte-Doolittle hydrophobicity')
     parser.add_argument('--no_apbs', action='store_true', help='Calculate electrostatic potential')
+    parser.add_argument('--patches', action='store_true', help='Decompose surface into patches')
 
     return parser.parse_args()
 
