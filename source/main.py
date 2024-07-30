@@ -97,7 +97,7 @@ def compute_surface(args):
 
     # Path to output folder
     path_out = Path(args.output_dir).joinpath(f"{args.path.stem}")
-    path_out.mkdir(exist_ok=True)
+    path_out.mkdir(parents=True, exist_ok=True)
 
     # Path for output mesh
     path_ply = path_out.joinpath(f"{args.path.stem}.ply")
