@@ -32,7 +32,7 @@ def computeCharges(path_pdb, vertices, names):
         chain_id = res.get_parent().get_id()
         if chain_id == "":
             chain_id = " "
-        residues[(chain_id, res.get_id())] = res
+        residues[(chain_id, res.get_id()[1])] = res
 
     atoms = Selection.unfold_entities(struct, "A")
     satisfied_CO, satisfied_HN = computeSatisfied_CO_HN(atoms)
@@ -45,7 +45,7 @@ def computeCharges(path_pdb, vertices, names):
         if chain_id == "":
             chain_id = " "
         res_id = int(fields[1])
-        atom_name = fields[3]
+        atom_name = fields[4]
         # Ignore atom if it is BB and it is already satisfied.
         if atom_name == "H" and res_id in satisfied_HN:
             continue
@@ -211,4 +211,5 @@ def assignChargesToNewMesh(new_vertices, old_vertices, old_charges, seeder_opts,
             dists, result = kdt.query(testset)
         new_charges = old_charges[result[:,0]]
     return new_charges
+
 

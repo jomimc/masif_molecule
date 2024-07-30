@@ -14,8 +14,8 @@ def output_pdb_as_xyzrn(path_input, path_xyzrn):
         xyzrnfilename: output in xyzrn format.
     """
     parser = PDBParser()
-    struct = parser.get_structure(pdbfilename, pdbfilename)
-    outfile = open(xyzrnfilename, "w")
+    struct = parser.get_structure('', path_input)
+    outfile = open(path_xyzrn, "w")
     for atom in struct.get_atoms():
         name = atom.get_name()
         residue = atom.get_parent()
@@ -27,15 +27,16 @@ def output_pdb_as_xyzrn(path_input, path_xyzrn):
         chain = residue.get_parent().get_id()
         atomtype = name[0]
 
-        if path.suffix == '.pqr':
+        if path_input.suffix == '.pqr':
             R = atom.get_bfactor()
-        elif path.suffix == '.pdb':
+        elif path_input.suffix == '.pdb':
             if atomtype not in radii:
                 continue
             R = radii[atomtype]
 
         coords = "{:.06f} {:.06f} {:.06f}".format(*atom.get_coord())
-        full_id = "{chain}_{residx:d}_{resname}_{atomtype}"
+        full_id = f"{chain}_{residx:d}_{resname}_{atomtype}_{name}"
 
         outfile.write(coords + " " + R + " 1 " + full_id + "\n")
+
 

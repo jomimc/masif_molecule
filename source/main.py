@@ -7,6 +7,7 @@ import sys
 
 import numpy as np
 import Bio
+from Bio.Data.IUPACData import protein_letters_3to1
 from Bio.PDB import * 
 
 # Local includes
@@ -24,12 +25,6 @@ from triangulation.computeAPBS import computeAPBS
 from triangulation.compute_normal import compute_normal
 from sklearn.neighbors import KDTree
 
-if len(sys.argv) <= 1: 
-    print("Usage: {config} "+sys.argv[0]+" PDBID_A")
-    print("A or AB are the chains to include in this surface.")
-    sys.exit(1)
-
-
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='A program to compute molecular surfaces')
@@ -46,7 +41,7 @@ def parse_arguments():
     parser.add_argument('--noH', action='store_true', help='Do not protonate PDB file?')
     parser.add_argument('--hbond', action='store_true', help='Calculate hydrogen-bonding potential')
     parser.add_argument('--hphob', action='store_true', help='Calculate Kyte-Doolittle hydrophobicity')
-    parser.add_argument('--no_apbs', action='store_false', help='Calculate electrostatic potential')
+    parser.add_argument('--no_apbs', action='store_true', help='Calculate electrostatic potential')
     parser.add_argument('--run_all', action='store_true', help='Run on all surfaces')
     parser.add_argument('--use_mp', action='store_true', help='Use multiprocessing')
 
@@ -55,28 +50,28 @@ def parse_arguments():
 
 def unpack_names(names, features):
     chain, residx, resname, atomtype = [], [], [], []
-    names = ['chain', 'residx', 'resname', 'atomtype']
+    featnames = ['chain', 'residx', 'resname', 'atomtype']
     for n in names:
-        c, ri, rn, a = n.split('_')
+        c, ri, rn, a = n.split('_')[:4]
         chain.append(c)
         residx.append(int(ri))
-        resname.append(rn)
+        resname.append(protein_letters_3to1.get(rn, 'X'))
         atomtype.append(a)
-    for n, f in zip(names, [chain, residx, resname, atomtype]):
+    for n, f in zip(featnames, [chain, residx, resname, atomtype]):
         features[n] = f
     return features
 
 
-def save_features(path, mesh, features):
+def save_features(path, features):
     # Set precision of data types
-    dtype = {'chain':'U1', 'residx':np.int16, 'resname':'U3', 'atomtype':'U1',
+    dtype = {'chain':'S1', 'residx':np.int16, 'resname':'S1', 'atomtype':'S1',
              'hbond':np.float16, 'hphob':np.float16, 'charge':np.float16,
              'mean_curvature':np.float16, 'gaussian_curvature':np.float16}
 
     # Save each feature to a separate file
     for name, feat in features.items():
         p = path.with_name(f"{path.stem}_{name}")
-        np.save(p, feat.astype(dtype[name]))
+        np.save(p, np.array(feat, dtype[name]))
 
 
 def compute_surface(args):
@@ -88,27 +83,27 @@ def compute_surface(args):
     path_feat = path_out.joinpath(f"{args.path.stem}.npy")
     features = {}
 
-    if args.chain != '':
-        # Extract a single chain
-        path_pdb_chain = tmp_dir.joinpath(f"{main_path.stem}_{args.chain}.{main_path.suffix}")
-        extractPDB(main_path, path_pdb_chain, args.chain)
-        main_path = path_pdb_chain
+    # Rewrite PDB file; extract a single chain if needed
+    ctxt = '' if args.chain == '' else f'_{args.chain}'
+    path_pdb_chain = tmp_dir.joinpath(f"{main_path.stem}{ctxt}{main_path.suffix}")
+    extractPDB(main_path, path_pdb_chain, args.chain)
+    main_path = path_pdb_chain
 
     if args.noH:
         # Remove hydrogens
-        path_deprotonated = tmp_dir.joinpath(f"{main_path.stem}_noH.{main_path.suffix}")
+        path_deprotonated = tmp_dir.joinpath(f"{main_path.stem}{main_path.suffix}")
         deprotonate(str(main_path), str(path_deprotonated))
         main_path = path_deprotonated
     else:
         # Add hydrogens
-        path_protonated = tmp_dir.joinpath(f"{main_path.stem}_H.{main_path.suffix}")
+        path_protonated = tmp_dir.joinpath(f"{main_path.stem}{main_path.suffix}")
         protonate(str(main_path), str(path_protonated))
         main_path = path_protonated
 
     # Compute MSMS of surface
     msms_args = ["-density", str(args.msms_density), "-hdensity", str(args.msms_hdensity),
                  "-probe", str(args.msms_probe)]
-    vertices, faces, normals, names, areas = computeMSMS(str(main_path), msms_args)
+    vertices, faces, normals, names, areas = computeMSMS(main_path, msms_args)
 
     # Compute "charged" vertices
     if args.hbond:
@@ -116,7 +111,7 @@ def compute_surface(args):
 
     # For each surface residue, assign the hydrophobicity of its amino acid. 
     if args.hphob:
-        vertex_hphobicity = computeHydrophobicity(names)
+        vertex_hphob = computeHydrophobicity(names)
 
 
     # Regularize the mesh
@@ -127,10 +122,10 @@ def compute_surface(args):
 
     # Find nearest neighbors between old and new mesh
     kdt = KDTree(vertices)
-    dists, result = kdt.query(testset, k=4)
+    dists, result = kdt.query(mesh.vertices, k=4)
 
     # Assign names (vertex atom/residue info) to new mesh
-    names = names[result[:,0]]
+    names = np.array(names)[result[:,0]]
     features = unpack_names(names, features)
 
     # Assign hbond values to new mesh
@@ -141,13 +136,13 @@ def compute_surface(args):
 
     # Assign hphob values to new mesh
     if args.hphob:
-        vertex_hphobicity = assignChargesToNewMesh(mesh.vertices, vertices,\
-            vertex_hphobicity, masif_opts, dists=dists, result=result)
+        vertex_hphob = assignChargesToNewMesh(mesh.vertices, vertices,\
+            vertex_hphob, masif_opts, dists=dists, result=result)
         features['hphob'] = vertex_hphob
 
     # Compute the normals
     if not args.no_apbs:
-        vertex_charges = computeAPBS(mesh.vertices, out_filename1+".pdb", out_filename1)
+        vertex_charges = computeAPBS(mesh.vertices, main_path, tmp_dir)
         features['charge'] = vertex_charges / 10
 
 
@@ -161,4 +156,8 @@ def compute_surface(args):
     path_ply.parent.mkdir(exist_ok=True)
     save_ply(str(path_ply), mesh)
     save_features(path_feat, features)
+
+
+if __name__ == "__main__":
+    compute_surface(parse_arguments())
 

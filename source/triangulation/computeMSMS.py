@@ -14,13 +14,12 @@ def computeMSMS(path_input,  msms_args):
     # Convert 
     randnum = random.randint(1,10000000)
     file_base = masif_opts['tmp_dir']+"/msms_"+str(randnum)
-    out_xyzrn = file_base+".xyzrn"
+    path_xyzrn = file_base+".xyzrn"
     output_pdb_as_xyzrn(path_input, path_xyzrn)
 
     # Now run MSMS on xyzrn file
     FNULL = open(os.devnull, 'w')
-    args = [msms_bin] + [msms_args] + \
-           ["-if",path_xyzrn,"-of",file_base, "-af", file_base]
+    args = [msms_bin] + msms_args + ["-if",path_xyzrn,"-of",file_base, "-af", file_base]
 
     p2 = Popen(args, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p2.communicate()
@@ -40,4 +39,5 @@ def computeMSMS(path_input,  msms_args):
     os.remove(file_base+'.vert')
     os.remove(file_base+'.face')
     return vertices, faces, normals, names, areas
+
 

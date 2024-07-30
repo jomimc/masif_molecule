@@ -49,7 +49,7 @@ def extractPDB(infilename, outfilename, chain_ids=""):
 
     for chain in model:
         if (
-            chain_ids == None
+            chain_ids == ""
             or chain.get_id() in chain_ids
         ):
             structBuild.init_chain(chain.get_id())
@@ -63,5 +63,6 @@ def extractPDB(infilename, outfilename, chain_ids=""):
     # Output the selected residues
     pdbio = PDBIO()
     pdbio.set_structure(outputStruct)
-    pdbio.save(outfilename, select=NotDisordered())
+    pdbio.save(str(outfilename), select=NotDisordered())
+
 
