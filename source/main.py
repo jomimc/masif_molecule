@@ -89,11 +89,23 @@ def get_patches(path, mesh, vertex_normals, features, patch_params):
 
 def compute_surface(args):
 
+    # Path to directory for temporary files
     tmp_dir= Path(masif_opts['tmp_dir'])
+
+    # Path to input file
     main_path = args.path
+
+    # Path to output folder
     path_out = Path(args.output_dir).joinpath(f"{args.path.stem}")
+    path_out.mkdir(exist_ok=True)
+
+    # Path for output mesh
     path_ply = path_out.joinpath(f"{args.path.stem}.ply")
+
+    # Path template for features (and patches)
     path_feat = path_out.joinpath(f"{args.path.stem}.npy")
+
+    # Container for features
     features = {}
 
     # Rewrite PDB file; extract a single chain if needed
