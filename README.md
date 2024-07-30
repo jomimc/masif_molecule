@@ -14,7 +14,7 @@ This pipeline consists of several stages:
  * Compute the electrostatic potential on the surface using multivalue, and [APBS](http://www.poissonboltzmann.org/).
  * Compute hydrophobicity - mapping amino acid identity to a hydrophobicity score.
  * Compute hydrogen-bonding potential - requires knowledge of amino acid identity.
- * Compute surface curvature - using a matlab script.
+ * Compute surface curvature
 
 This pipeline cannot work with non-protein molecules due to the key step of assigning
 charges when converting files from PDB to PQR. The MaSIF-Molecule allows starting from PQR files,
@@ -69,7 +69,7 @@ The easiest way to test MaSIF is through a Docker container. Please see our tuto
 
 ## License
 
-MaSIF is released under an [Apache v2.0 license](LICENSE).
+MaSIF-molecule is released under an [Apache v2.0 license](LICENSE).
 
 ## Reference
 If you use this code, please use the bibtex entry in [citation.bib](citation.bib)
