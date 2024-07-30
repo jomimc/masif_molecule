@@ -4,7 +4,7 @@ masif_opts = {}
 # Default directories
 masif_opts["tmp_dir"] = tempfile.gettempdir()
 masif_opts["ply_dir"] = "output_surfaces"
-masif_opts["ply_file_template"] = masif_opts["ply_chain_dir"] + "/{}_{}.ply"
+masif_opts["ply_file_template"] = masif_opts["ply_dir"] + "/{}_{}.ply"
 
 # Surface features
 masif_opts["use_hbond"] = True
