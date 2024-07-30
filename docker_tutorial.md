@@ -2,15 +2,6 @@
 
 # Docker tutorial for MaSIF.
 
-## Table of Contents: 
-
-- [Installation](#Installation)
-- [MaSIF-site](#MaSIF-site)
-    * [Running the pipeline on a protein from a PDB id or PDB file](#Running the pipeline on a protein from a PDB file)
-    * [Reproducing the transient benchmark from the paper](#Running the pipeline on a nanoparticle from a PQR file)
-
-
-
 ## Installation
 
 ```
@@ -23,13 +14,13 @@ You now start a local container with MaSIF. The first step is to clone the masif
 root@b30c52bcb86f:/masif# git clone https://github.com/jomimc/masif_molecule.git
 ```
 
-## MaSIF-site
+## MaSIF pipeline
 
 ### Running the pipeline on a protein from a PDB file
 
 Go into the MaSIF-molecule source directory. 
 ```
-cd masif_molecule_source
+cd masif_molecule/source
 ```
 
 Running the pipeline on the test data provided "data/2sic.pdb". To extract a single protein (chain) use the "-c" option. Specify output folder with "-o". Run "python main.py --help" to see all options. In this example we compute all possible features and patches with default parameters.
@@ -49,7 +40,7 @@ python main.py ../data/2sic.pdb -o test_data --hphob --hbond --patches
 
 Go into the MaSIF-molecule source directory. 
 ```
-cd masif_molecule_source
+cd masif_molecule/source
 ```
 
 Running the pipeline on the test data provided "data/np.pqr". To extract a single protein (chain) use the "-c" option. Specify output folder with "-o". Run "python main.py --help" to see all options. In this example we compute all possible features and patches with default parameters.
