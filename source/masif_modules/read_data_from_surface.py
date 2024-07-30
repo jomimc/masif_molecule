@@ -46,17 +46,6 @@ def get_patches_from_surface(mesh, normals, features, params):
             else:
                 FEAT.append(features[name])
 
-    # Normalize the charge.
-    charge = mesh.get_attribute("vertex_charge")
-    charge = (charge)
-
-    # Hbond features
-    hbond = mesh.get_attribute("vertex_hbond")
-
-    # Hydropathy features
-    # Normalize hydropathy by dividing by 4.5
-    hphob = mesh.get_attribute("vertex_hphob")/4.5
-
     # n: number of patches, equal to the number of vertices.
     n = len(mesh.vertices)
     
@@ -77,7 +66,7 @@ def get_patches_from_surface(mesh, normals, features, params):
         
         input_feat[vix, :len(neigh_vix), 0] = si[neigh_vix]
         input_feat[vix, :len(neigh_vix), 1] = ddc
-        for i, f in FEAT:
+        for i, f in enumerate(FEAT):
             input_feat[vix, :len(neigh_vix), i+2] = f[neigh_vix]
         
     return input_feat, rho, theta, mask, neigh_indices 

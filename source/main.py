@@ -32,7 +32,7 @@ def parse_arguments():
     parser.add_argument('--msms_hdensity', type=float, default=3.0, help='Density of surface triangulation')
     parser.add_argument('--msms_probe', type=float, default=1.5, help='Surface triangulation probe radius')
     parser.add_argument('--mesh_res', type=float, default=1.0, help='Surface triangulation probe radius')
-    parser.add_argument('--patch_max_dist', type=float, default=12.0, help='Geodesic patch radius')
+    parser.add_argument('--patch_max_dist', type=float, default=9.0, help='Geodesic patch radius')
     parser.add_argument('--patch_max_size', type=int, default=100, help='Maximum number of vertices in patch')
     parser.add_argument('--redo', action='store_true', help='Overwrite surface comparison results')
     parser.add_argument('--noH', action='store_true', help='Do not protonate PDB file?')
@@ -75,16 +75,16 @@ def get_patches(path, mesh, vertex_normals, features, patch_params):
     input_feat, rho, theta, mask, neigh_idx = get_patches_from_surface(mesh, vertex_normals, features, patch_params)
 
     # Save patches
-    np.save(path.with_name(f"{path.stem}_rho_wrt_center", rho)
-    np.save(path.with_name(f"{path.stem}_theta_wrt_center", theta)
-    np.save(path.with_name(f"{path.stem}_input_feat", input_feat)
-    np.save(path.with_name(f"{path.stem}_mask", mask)
-    np.save(path.with_name(f"{path.stem}_list_indices", neigh_indices)
+    np.save(path.with_name(f"{path.stem}_rho_wrt_center"), rho)
+    np.save(path.with_name(f"{path.stem}_theta_wrt_center"), theta)
+    np.save(path.with_name(f"{path.stem}_input_feat"), input_feat)
+    np.save(path.with_name(f"{path.stem}_mask"), mask)
+    np.save(path.with_name(f"{path.stem}_list_indices"), neigh_idx)
 
     # Save x, y, z
-    np.save(path.with_name(f"{path.stem}_X.npy", mesh.vertices[:,0])
-    np.save(path.with_name(f"{path.stem}_Y.npy", mesh.vertices[:,1])
-    np.save(path.with_name(f"{path.stem}_Z.npy", mesh.vertices[:,2])
+    np.save(path.with_name(f"{path.stem}_X.npy"), mesh.vertices[:,0])
+    np.save(path.with_name(f"{path.stem}_Y.npy"), mesh.vertices[:,1])
+    np.save(path.with_name(f"{path.stem}_Z.npy"), mesh.vertices[:,2])
 
 
 def compute_surface(args):
@@ -173,6 +173,15 @@ def compute_surface(args):
     # Decompose surface into patches
     if args.patches:
         patch_params = {'max_distance':args.patch_max_dist, 'max_shape_size':args.patch_max_size}
+
+        # Add vertices to mesh
+        mesh.add_attribute("vertex_nx")
+        mesh.add_attribute("vertex_ny")
+        mesh.add_attribute("vertex_nz")
+        mesh.set_attribute("vertex_nx", vertex_normals[:,0])
+        mesh.set_attribute("vertex_ny", vertex_normals[:,1])
+        mesh.set_attribute("vertex_nz", vertex_normals[:,2])
+
         get_patches(path_feat, mesh, vertex_normals, features, patch_params)
 
 
