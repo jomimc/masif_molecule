@@ -35,6 +35,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='A program to compute molecular surfaces')
     parser.add_argument('path', type=Path, help='Path to molecule PDB / PQR file')
     parser.add_argument('-c', '--chain', default='', help='Choose a single chain to compute')
+    parser.add_argument('-o', '--output_dir', default=masif_opts['ply_dir'], help='Output directory path')
     parser.add_argument('-m', '--method', type=str, help='Which method to run?')
     parser.add_argument('-v', '--verbose', action="store_false", help='Turn off verbose output')
     parser.add_argument('--msms_density', type=float, default=3.0, help='Density of surface triangulation')
@@ -52,25 +53,40 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def unpack_names(names):
+def unpack_names(names, features):
     chain, residx, resname, atomtype = [], [], [], []
+    names = ['chain', 'residx', 'resname', 'atomtype']
     for n in names:
         c, ri, rn, a = n.split('_')
         chain.append(c)
         residx.append(int(ri))
         resname.append(rn)
         atomtype.append(a)
-    return [np.array(x) for x in [chain, residx, resname, atomtype]]
+    for n, f in zip(names, [chain, residx, resname, atomtype]):
+        features[n] = f
+    return features
 
 
-def save_features(mesh, features):
-    pass 
+def save_features(path, mesh, features):
+    # Set precision of data types
+    dtype = {'chain':'U1', 'residx':np.int16, 'resname':'U3', 'atomtype':'U1',
+             'hbond':np.float16, 'hphob':np.float16, 'charge':np.float16,
+             'mean_curvature':np.float16, 'gaussian_curvature':np.float16}
+
+    # Save each feature to a separate file
+    for name, feat in features.items():
+        p = path.with_name(f"{path.stem}_{name}")
+        np.save(p, feat.astype(dtype[name]))
 
 
 def compute_surface(args):
 
     tmp_dir= Path(masif_opts['tmp_dir'])
     main_path = args.path
+    path_out = Path(args.output_dir).joinpath(f"{args.path.stem}")
+    path_ply = path_out.joinpath(f"{args.path.stem}.ply")
+    path_feat = path_out.joinpath(f"{args.path.stem}.npy")
+    features = {}
 
     if args.chain != '':
         # Extract a single chain
@@ -115,36 +131,34 @@ def compute_surface(args):
 
     # Assign names (vertex atom/residue info) to new mesh
     names = names[result[:,0]]
+    features = unpack_names(names, features)
 
     # Assign hbond values to new mesh
     if args.hbond:
         vertex_hbond = assignChargesToNewMesh(mesh.vertices, vertices,\
             vertex_hbond, masif_opts, dists=dists, result=result)
+        features['hbond'] = vertex_hbond
 
     # Assign hphob values to new mesh
     if args.hphob:
         vertex_hphobicity = assignChargesToNewMesh(mesh.vertices, vertices,\
             vertex_hphobicity, masif_opts, dists=dists, result=result)
+        features['hphob'] = vertex_hphob
 
     # Compute the normals
     if not args.no_apbs:
         vertex_charges = computeAPBS(mesh.vertices, out_filename1+".pdb", out_filename1)
+        features['charge'] = vertex_charges / 10
 
 
     # Add curvature to mesh
     mesh.add_attribute("vertex_mean_curvature")
     mesh.add_attribute("vertex_gaussian_curvature")
+    features['mean_curvature'] = mesh.get_attribute("vertex_mean_curvature")
+    features['gaussian_curvature'] = mesh.get_attribute("vertex_gaussian_curvature")
 
-    # Convert to ply and save.
-    save_ply(out_filename1+".ply", mesh.vertices,\
-                        mesh.faces, normals=vertex_normal, charges=vertex_charges,\
-                        normalize_charges=True, hbond=vertex_hbond, hphob=vertex_hphobicity)
+    # Save mesh and features
+    path_ply.parent.mkdir(exist_ok=True)
+    save_ply(str(path_ply), mesh)
+    save_features(path_feat, features)
 
-    save_features(mesh,
-
-    if not os.path.exists(masif_opts['ply_chain_dir']):
-        os.makedirs(masif_opts['ply_chain_dir'])
-    if not os.path.exists(masif_opts['pdb_chain_dir']):
-        os.makedirs(masif_opts['pdb_chain_dir'])
-    shutil.copy(out_filename1+'.ply', masif_opts['ply_chain_dir']) 
-    shutil.copy(out_filename1+'.pdb', masif_opts['pdb_chain_dir']) 
