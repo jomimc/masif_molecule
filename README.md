@@ -1,5 +1,7 @@
 ## MaSIF-Molecule :: A reimplementation of the MaSIF pre-processing pipeline for use on arbitrary molecules.
 
+Code used in [Statistical Survey of Chemical and Geometric Patterns on Protein Surfaces as a Blueprint for Protein-mimicking Nanoparticles](https://www.biorxiv.org/content/10.1101/2024.07.18.604221v2).
+
 See [MaSIF](https://github.com/LPDI-EPFL/masif) for the source repository.
 
 ## Description
