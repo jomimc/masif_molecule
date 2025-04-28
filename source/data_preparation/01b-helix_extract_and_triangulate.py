@@ -6,7 +6,6 @@ import shutil
 from Bio.PDB import * 
 import sys
 import importlib
-from IPython.core.debugger import set_trace
 
 # Local includes
 from default_config.masif_opts import masif_opts

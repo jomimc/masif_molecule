@@ -1,6 +1,5 @@
 # coding: utf-8
 # ## Imports and helper functions
-from IPython.core.debugger import set_trace
 import pymesh
 import time
 import numpy as np

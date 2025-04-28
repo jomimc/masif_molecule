@@ -1,4 +1,5 @@
 *.pyc
+*.swp
 data/**/00-raw_pdbs/
 data/**/01-benchmark_surfaces/
 data/**/01-benchmark_pdbs/

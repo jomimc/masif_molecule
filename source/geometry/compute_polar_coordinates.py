@@ -10,7 +10,6 @@ from sklearn.manifold import MDS
 import networkx as nx
 import numpy as np
 import scipy.linalg
-from IPython.core.debugger import set_trace
 from  numpy.linalg import norm
 import time
 from scipy.sparse import csr_matrix, coo_matrix
@@ -149,10 +148,11 @@ def compute_thetas(plane, vix, verts, faces, normal, neighbors, idx):
         if len(check_valid) == 3:
             valid = True
             break
+
     try:
         assert(valid)
     except:
-        set_trace()
+        print("Some sort of error...")
      
     # Compute the normal for tt by averagin over the vertex normals
     normal_tt = np.mean([normal[tt[0]], normal[tt[1]], normal[tt[2]]], axis=0)

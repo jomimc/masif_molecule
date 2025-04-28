@@ -4,7 +4,6 @@ from sklearn import metrics
 import numpy as np
 import sys
 import os
-from IPython.core.debugger import set_trace
 from sklearn.metrics import accuracy_score, roc_auc_score
 
 # Features and theta are flipped for the binder in construct_batch (except for hydrophobicity).
